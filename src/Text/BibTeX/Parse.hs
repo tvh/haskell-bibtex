@@ -8,7 +8,7 @@ import qualified Data.Char as Char
 
 import Control.Monad (liftM, liftM2, liftM3, )
 
-import Data.List.HT (multiReplace, chop, )
+import Data.List.HT (chop, )
 import Data.String.HT (trim, )
 
 
@@ -92,24 +92,3 @@ splitAuthorList =
 splitSepList :: Char -> String -> [String]
 splitSepList sep =
    map (dropWhile (' '==)) . chop (sep==)
-
-
-
-latexToUnicode :: String -> String
-latexToUnicode = multiReplace latexSpecialChars
-
-
-latexSpecialChars :: [(String, String)]
-latexSpecialChars =
-   ("\\&",    "&") :
-   ("\\\"a",  "ä") :
-   ("\\\"o",  "ö") :
-   ("\\\"u",  "ü") :
-   ("\\\"A",  "Ä") :
-   ("\\\"O",  "Ö") :
-   ("\\\"U",  "Ü") :
-   ("\\ss{}", "ß") :
-   ("\\'e",   "é") :
-   ("\\'a",   "á") :
-   ("\\'{\\i}", "í") :
-   []

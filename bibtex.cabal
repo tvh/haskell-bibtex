@@ -44,3 +44,4 @@ Library
     Text.BibTeX.Entry
     Text.BibTeX.Format
     Text.BibTeX.Parse
+    Text.LaTeX.Character
