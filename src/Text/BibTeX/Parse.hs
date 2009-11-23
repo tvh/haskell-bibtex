@@ -12,6 +12,10 @@ import Data.List.HT (chop, )
 import Data.String.HT (trim, )
 
 
+file :: Parser [Entry.T]
+file =
+   Parsec.many (skippingSpace entry)
+
 entry :: Parser Entry.T
 entry =
    do Parsec.char '@'
