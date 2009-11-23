@@ -2,8 +2,6 @@ module Text.BibTeX.Parse where
 
 import qualified Text.BibTeX.Entry as Entry
 
-import Data.List (intersperse, )
-
 import Text.ParserCombinators.Parsec (Parser, (<|>), )
 import qualified Text.ParserCombinators.Parsec as Parsec
 import qualified Data.Char as Char
@@ -85,15 +83,15 @@ splitCommaSepList :: String -> [String]
 splitCommaSepList = splitSepList ','
 
 {- |
-Split a string at the commas and remove leading spaces.
+Split a string containing a list of authors in BibTeX notation.
 -}
 splitAuthorList :: String -> [String]
 splitAuthorList =
-   map (concat . intersperse " ") . chop ("and" ==)
-      . filter (not . null) . chop Char.isSpace
+   map unwords . chop ("and" ==) . words
 
 splitSepList :: Char -> String -> [String]
-splitSepList sep = map (dropWhile (' '==)) . chop (sep==)
+splitSepList sep =
+   map (dropWhile (' '==)) . chop (sep==)
 
 
 
