@@ -3,6 +3,7 @@ module Text.BibTeX.Format where
 import qualified Text.BibTeX.Entry as Entry
 
 import Data.List (intersperse, )
+import Data.List.HT (switchR, )
 
 import qualified Data.Char as Char
 
@@ -17,11 +18,16 @@ entry (Entry.Cons entryType bibId items) =
 
 
 enumerate :: [String] -> String
-enumerate (name:[]) = name
-enumerate names =
-   let name1:name0:rest = reverse names
-   in  foldl (\enum s -> s++", "++enum) (name0++" and "++name1) rest
-       --foldl (flip ((++).(++", "))) (name0 ++ " and " ++name1) rest
+enumerate =
+   switchR "" $ \xs0 lastWord0 ->
+   flip (switchR lastWord0) xs0 $ \xs1 lastWord1 ->
+   foldr
+      (\word -> (word ++) . (", " ++))
+      (lastWord1 ++ " and " ++ lastWord0) xs1
+
+authorList :: [String] -> String
+authorList =
+   concat . intersperse " and "
 
 commaSepList :: [String] -> String
 commaSepList = sepList ','
