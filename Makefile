@@ -1,2 +1,2 @@
 ghci:
-	ghci -Wall -i:src src/Text/BibTeX/Parse.hs
+	ghci -Wall -i:src src/Publications.hs

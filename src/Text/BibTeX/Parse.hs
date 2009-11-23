@@ -8,20 +8,28 @@ import qualified Data.Char as Char
 
 import Control.Monad (liftM, liftM2, liftM3, )
 
+import Data.Maybe (catMaybes, )
 import Data.List.HT (chop, )
 import Data.String.HT (trim, )
 
 
 file :: Parser [Entry.T]
 file =
-   Parsec.many (skippingSpace entry)
+   fmap catMaybes $
+   Parsec.many
+      (skippingSpace (fmap Just entry <|> fmap (const Nothing) comment))
+
+comment :: Parser String
+comment =
+   do Parsec.char '#'
+      fmap trim $ Parsec.manyTill Parsec.anyChar Parsec.newline
 
 entry :: Parser Entry.T
 entry =
    do Parsec.char '@'
       entryType <- skippingSpace identifier
       skippingSpace (Parsec.char '{')
-      bibId <- skippingSpace (identifier <|> return "")
+      bibId <- skippingSpace (bibIdentifier <|> return "")
       skippingSpace (Parsec.char ',')
       assigns <- assignment `Parsec.sepEndBy` skippingSpace (Parsec.char ',')
       skippingSpace (Parsec.char '}')
@@ -30,36 +38,41 @@ entry =
 
 assignment :: Parser (String, String)
 assignment =
-   do field <- skippingSpace identifier
+   do field <- skippingSpace bibIdentifier
       skippingSpace (Parsec.char '=')
-      skippingSpace (Parsec.char '{')
-      value <- texSequence
-      skippingSpace (Parsec.char '}')
-      return (field, trim value)
+      val <- skippingSpace value
+      return (field, trim val)
 
-texSequence :: Parser String
-texSequence =
-   liftM concat (Parsec.many texBlock)
+value :: Parser String
+value =
+   Parsec.many1 Parsec.digit <|>
+   Parsec.between (Parsec.char '{') (Parsec.char '}') (texSequence '}') <|>
+   Parsec.between (Parsec.char '"') (Parsec.char '"') (texSequence '"')
 
-texBlock :: Parser String
-texBlock =
-{-
-   (liftM (("{"++) . (++"}"))
-      (Parsec.between (Parsec.char '{') (Parsec.char '}')
-                      texSequence)) <|>
--}
+texSequence :: Char -> Parser String
+texSequence closeChar =
+   liftM concat (Parsec.many (texBlock closeChar))
+
+texBlock :: Char -> Parser String
+texBlock closeChar =
    liftM3 (\open body close -> open : body ++ close : [])
-      (Parsec.char '{') texSequence (Parsec.char '}') <|>
+      (Parsec.char '{') (texSequence '}') (Parsec.char '}') <|>
    sequence
       [Parsec.char '\\',
-       Parsec.oneOf "{}'&\"" <|> Parsec.letter] <|>
-   Parsec.count 1 (Parsec.noneOf ['}'])
+       Parsec.oneOf "{}'`^&%\".,~# " <|> Parsec.letter] <|>
+   fmap (:[]) (Parsec.noneOf [closeChar])
 
 identifier :: Parser String
 identifier =
    liftM2 (:)
       Parsec.letter
       (Parsec.many Parsec.alphaNum)
+
+bibIdentifier :: Parser String
+bibIdentifier =
+   liftM2 (:)
+      Parsec.letter
+      (Parsec.many (Parsec.alphaNum <|> Parsec.oneOf "-_."))
 
 {- |
 Extends a parser, such that all trailing spaces are skipped.
