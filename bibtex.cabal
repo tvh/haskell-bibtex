@@ -36,7 +36,7 @@ Library
     utility-ht >=0.0.5 && <0.1
   If flag(base2)
     Build-Depends:
-      base >= 2
+      base >= 2 && <5
   Else
     Build-Depends:
       base >= 1.0 && < 2,
