@@ -11,9 +11,29 @@ Description:
   This package allows parsing, formatting and processing of BibTeX files.
   BibTeX files are databases for literature for the natbib package
   of the LaTeX typesetting system.
+  .
+  There is a little example for demonstration of the parser.
+  It generates a publication overview from a @.bib@ file.
+  See the "tex" directory of this package.
+  You can run the program and build an example document by running
+  .
+  > make pubs
+  .
+  The demonstration program can be build as stand-alone executable
+  using @cabal install -fbuildExamples@.
+  .
+  Technically the program generates a list of custom @\\nocite@ commands
+  for the LaTeX package @multibib@.
+  You can add the custom bibtex field @subtype@ to BibTeX entries
+  for more detailed categorization of an entry.
+  See "tex/publications.bib" for examples.
 Tested-With:      GHC==6.10.4
 Cabal-Version:    >=1.6
 Build-Type:       Simple
+Extra-Source-Files:
+  Makefile
+  tex/publications.tex
+  tex/publications.bib
 Source-Repository head
   type:     darcs
   location: http://code.haskell.org/~thielema/bibtex/
