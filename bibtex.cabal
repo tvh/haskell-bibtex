@@ -12,21 +12,38 @@ Description:
   BibTeX files are databases for literature for the natbib package
   of the LaTeX typesetting system.
   .
-  There is a little example for demonstration of the parser.
-  It generates a publication overview from a @.bib@ file.
-  See the "tex" directory of this package.
-  You can run the program and build an example document by running
+  The package contains two examples:
+  .
+  * The first example demonstrates the BibTeX parser
+    by generating a publication overview from a @.bib@ file.
+  .
+  * The second example demonstrates the BibTeX generation
+    by producing a large @.bib@ file from the tar archive
+    that cabal-install downloads to your local cabal directory.
+  .
+  Both examples will be build as stand-alone executable
+  when running
+  .
+  > cabal install -fbuildExamples bibtex
+  .
+  For the first example see the "tex" directory of this package.
+  You can start the program and build an example document by running
   .
   > make pubs
-  .
-  The demonstration program can be build as stand-alone executable
-  using @cabal install -fbuildExamples@.
   .
   Technically the program generates a list of custom @\\nocite@ commands
   for the LaTeX package @multibib@.
   You can add the custom bibtex field @subtype@ to BibTeX entries
   for more detailed categorization of an entry.
   See "tex/publications.bib" for examples.
+  .
+  The second example can be executed using
+  .
+  > make hackbib
+  .
+  The file @hackage.bib@ is written to the current directory.
+  The program reads an uncompressed tar archive from standard input
+  and writes the result bibliography file to standard output.
 Tested-With:      GHC==6.10.4
 Cabal-Version:    >=1.6
 Build-Type:       Simple
@@ -78,3 +95,17 @@ Executable       publication-overview
   GHC-Options:      -Wall
   Hs-source-dirs:   src
   Main-Is:          Publications.hs
+
+Executable       hackage-bibtex
+  If flag(buildExamples)
+    Build-Depends:
+      old-time >=1.0 && <1.1,
+      Cabal >=1.6 && <1.10,
+      tar >=0.3 && <0.4,
+      bytestring >=0.9 && <0.10
+  Else
+    Buildable:      False
+
+  GHC-Options:      -Wall
+  Hs-source-dirs:   src
+  Main-Is:          Hackage.hs

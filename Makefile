@@ -1,4 +1,4 @@
-.PHONY:	ghci pubs
+.PHONY:	ghci pubs hackbib
 
 # problem: bibtex refuses to generate empty bbl files
 # thus you must have at least one entry per publication type
@@ -21,3 +21,10 @@ pubs:	tex/publications.pdf
 
 tex/%.aux: tex/publications.tex
 	(cd $(dir $<); pdflatex $(notdir $<))
+
+
+hackbib:	hackage.bib
+
+hackage.bib:	$(HOME)/.cabal/packages/hackage.haskell.org/00-index.tar.gz
+	gunzip --stdout $< | ghc -e main src/Hackage.hs >$@
+#	gunzip --stdout $< | hackage-bibtex >$@
