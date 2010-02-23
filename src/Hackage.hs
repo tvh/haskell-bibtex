@@ -28,7 +28,7 @@ import qualified System.IO as IO
 import Distribution.Text (display, )
 
 import Data.List.HT (dropWhileRev, )
-import Data.Char    (toLower, isSpace, isAlpha, )
+import Data.Char    (toLower, isSpace, isAlpha, chr, )
 import Data.Version (showVersion, )
 import qualified Data.List as List
 
@@ -81,6 +81,20 @@ example =
       putStrLn (Format.entry $ fromPackage now $ PkgD.packageDescription pkg)
 
 
+{- |
+This decodes UTF-8 but in contrast to UTF8.toString
+it handles invalid characters like Latin-1 ones.
+This way we can also cope with many texts that contain actually Latin-1.
+-}
+decodeUTF8orLatin :: B.ByteString -> String
+decodeUTF8orLatin =
+   List.unfoldr (\bstr ->
+      flip fmap (UTF8.uncons bstr) $ \(c, rest) ->
+         if c==UTF8.replacement_char
+           then (chr $ fromIntegral $ B.head bstr, B.tail bstr)
+           else (c,rest))
+
+
 fromTarEntry :: Tar.Entry -> B.ByteString
 fromTarEntry ent =
    if List.isSuffixOf ".cabal" (TarEnt.entryPath ent)
@@ -88,7 +102,7 @@ fromTarEntry ent =
        case TarEnt.entryContent ent of
           TarEnt.NormalFile txt _size ->
              UTF8.fromString $
-             case parsePackageDescription (UTF8.toString txt) of
+             case parsePackageDescription (decodeUTF8orLatin txt) of
                 PkgP.ParseOk _ pkg ->
                    Format.entry $
                    fromPackage
