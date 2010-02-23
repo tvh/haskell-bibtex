@@ -2,6 +2,7 @@ module Main where
 
 import qualified Text.BibTeX.Format as Format
 import qualified Text.BibTeX.Entry as Entry
+import qualified Text.LaTeX.Character as LaTeX
 
 import qualified Distribution.PackageDescription.Parse as PkgP
 import qualified Distribution.PackageDescription as PkgD
@@ -55,11 +56,14 @@ fromPackage time pkg =
        Pkg.PackageName name = Pkg.pkgName pkgId
        year = ctYear time
        versionStr = showVersion (Pkg.pkgVersion pkgId)
-   in  Entry.Cons "Misc"
-          (map toLower surname ++ show year ++
-           name ++ "-" ++ versionStr) $
-       ("author", author) :
-       ("title", "{" ++ name ++ ": " ++ PkgD.synopsis pkg ++ "}") :
+       bibId =
+          map toLower surname ++ show year ++
+          name ++ "-" ++ versionStr
+   in  Entry.Cons "Misc" bibId $
+       ("author", LaTeX.fromUnicodeString author) :
+       ("title",
+           "{" ++ name ++ ": " ++
+           LaTeX.fromUnicodeString (PkgD.synopsis pkg) ++ "}") :
        ("howpublished",
            "\\url{http://hackage.haskell.org" ++
            packageURL (PkgD.package pkg) ++ "}") :
