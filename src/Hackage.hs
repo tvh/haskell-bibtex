@@ -1,5 +1,8 @@
 module Main where
 
+import qualified Text.BibTeX.Format as Format
+import qualified Text.BibTeX.Entry as Entry
+
 import qualified Distribution.PackageDescription.Parse as PkgP
 import qualified Distribution.PackageDescription as PkgD
 import qualified Distribution.Package as Pkg
@@ -35,7 +38,7 @@ packageURL :: PackageIdentifier -> String
 packageURL pkgid = "/package/" ++ display pkgid
 
 
-fromPackage :: CalendarTime -> PackageDescription -> String
+fromPackage :: CalendarTime -> PackageDescription -> Entry.T
 fromPackage time pkg =
    let author =
           let str = dropWhile isSpace $ PkgD.author pkg
@@ -51,29 +54,26 @@ fromPackage time pkg =
        Pkg.PackageName name = Pkg.pkgName pkgId
        year = ctYear time
        versionStr = showVersion (Pkg.pkgVersion pkgId)
-   in  unlines $
-       ("@Misc{" ++ map toLower surname ++ show year ++
-                    name ++ "-" ++ versionStr ++ ",") :
-       map (\(field,value) -> "  " ++ field ++ " = {" ++ value ++ "},") (
-          ("author", author) :
-          ("title", "{" ++ name ++ ": " ++ PkgD.synopsis pkg ++ "}") :
-          ("howpublished",
-              "\\url{http://hackage.haskell.org" ++
-              packageURL (PkgD.package pkg) ++ "}") :
-          ("year", show year) :
-          ("month", show (ctMonth time)) :
-          ("version", versionStr) :
-          ("keywords", "Haskell, " ++ PkgD.category pkg ) :
-          ("subtype", "program") :
-          []) ++
-       "}" :
+   in  Entry.Cons "Misc"
+          (map toLower surname ++ show year ++
+           name ++ "-" ++ versionStr) $
+       ("author", author) :
+       ("title", "{" ++ name ++ ": " ++ PkgD.synopsis pkg ++ "}") :
+       ("howpublished",
+           "\\url{http://hackage.haskell.org" ++
+           packageURL (PkgD.package pkg) ++ "}") :
+       ("year", show year) :
+       ("month", show (ctMonth time)) :
+       ("version", versionStr) :
+       ("keywords", "Haskell, " ++ PkgD.category pkg ) :
+       ("subtype", "program") :
        []
 
 example :: IO ()
 example =
    do now <- toCalendarTime =<< getClockTime
       pkg <- readPackageDescription Verbosity.silent "example.cabal"
-      putStrLn (fromPackage now (PkgD.packageDescription pkg))
+      putStrLn (Format.entry $ fromPackage now $ PkgD.packageDescription pkg)
 
 
 fromTarEntry :: Tar.Entry -> String
@@ -85,6 +85,7 @@ fromTarEntry ent =
              case parsePackageDescription
                      (map (chr . fromIntegral) (B.unpack txt)) of
                 PkgP.ParseOk _ pkg ->
+                   Format.entry $
                    fromPackage
                       (toUTCTime (TOD (fromIntegral $ TarEnt.entryTime ent) 0))
                       (PkgD.packageDescription pkg)

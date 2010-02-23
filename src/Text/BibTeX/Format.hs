@@ -14,7 +14,7 @@ entry (Entry.Cons entryType bibId items) =
          "  "++name++" = {"++value++"},\n"
    in  "@" ++ entryType ++ "{" ++ bibId ++ ",\n" ++
        concatMap formatItem items ++
-       "}\n\n"
+       "}\n"
 
 
 enumerate :: [String] -> String
