@@ -27,9 +27,11 @@ import qualified System.IO as IO
 
 import Distribution.Text (display, )
 
-import Data.List.HT (dropWhileRev, )
-import Data.Char    (toLower, isSpace, isAlpha, chr, )
-import Data.Version (showVersion, )
+import Data.String.HT (trim, )
+import Data.Tuple.HT  (mapFst, )
+import Data.List.HT   (switchL, switchR, )
+import Data.Char      (toLower, isSpace, isAlpha, chr, )
+import Data.Version   (showVersion, )
 import qualified Data.List as List
 
 
@@ -40,18 +42,58 @@ packageURL :: PackageIdentifier -> String
 packageURL pkgid = "/package/" ++ display pkgid
 
 
+{- |
+Filter out parts in parentheses and e-mails addresses
+-}
+removeAnnotations :: String -> String
+removeAnnotations "" = ""
+removeAnnotations (c:cs) =
+   case c of
+      '(' -> removeAnnotations $ drop 1 $ dropWhile (')'/=) cs
+      '<' -> removeAnnotations $ drop 1 $ dropWhile ('>'/=) cs
+      _ -> c : removeAnnotations cs
+
+splitList :: String -> [String]
+splitList =
+   let separate rest = ([], uncurry (:) $ recourse rest)
+       continue c rest = mapFst (c:) $ recourse rest
+       recourse str =
+          case str of
+             '/' : rest -> separate rest
+             '&' : rest -> separate rest
+             ',' : rest -> separate rest
+             c0:rest0@('a':'n':'d':c1:rest) ->
+               if isSpace c0 && isSpace c1
+                 then separate rest
+                 else continue c0 rest0
+             c:rest -> continue c rest
+             "" -> ([], [])
+   in  uncurry (:) . recourse
+
+splitAuthorList :: String -> [String]
+splitAuthorList =
+   map (\author ->
+      case author of
+         "..." -> "others"
+         "et al." -> "others"
+         _ -> author) .
+   filter (not . null) .
+   map trim .
+   splitList .
+   -- remove numbers, quotation marks ...
+   filter (\c -> isAlpha c || isSpace c || elem c ".-'@/&,") .
+   removeAnnotations
+
+{- authors must be split with respect to ',', '/', '&' and ' and ' -}
 fromPackage :: CalendarTime -> PackageDescription -> Entry.T
 fromPackage time pkg =
-   let author =
-          let str = dropWhile isSpace $ PkgD.author pkg
-          in  case str of
-                 '"' : t -> takeWhile ('"' /=) t
-                 _ -> dropWhileRev isSpace $ takeWhile ('<' /=) str
+   let authors =
+          splitAuthorList $ PkgD.author pkg
        surname =
-          let nameParts = words author
-          in  if null nameParts
-                then ""
-                else filter isAlpha $ last nameParts
+          switchL "unknown" (\firstAuthor _ ->
+             switchR "" (\_ -> filter isAlpha) $
+             words firstAuthor) $
+          authors
        pkgId = PkgD.package pkg
        Pkg.PackageName name = Pkg.pkgName pkgId
        year = ctYear time
@@ -60,7 +102,11 @@ fromPackage time pkg =
           map toLower surname ++ show year ++
           name ++ "-" ++ versionStr
    in  Entry.Cons "Misc" bibId $
-       ("author", LaTeX.fromUnicodeString author) :
+       ("author",
+           if null authors
+             then "unknown"
+             else Format.authorList $
+                  map LaTeX.fromUnicodeString authors) :
        ("title",
            "{" ++ name ++ ": " ++
            LaTeX.fromUnicodeString (PkgD.synopsis pkg) ++ "}") :
