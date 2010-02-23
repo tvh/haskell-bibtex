@@ -44,6 +44,22 @@ Description:
   The file @hackage.bib@ is written to the current directory.
   The program reads an uncompressed tar archive from standard input
   and writes the result bibliography file to standard output.
+  .
+  Note that @hackage.bib@ exceeds some limits of standard BibTeX and LaTeX:
+  There are currently much more than 5000 versions of packages,
+  the maximum my BibTeX can handle at once.
+  That is, you can use the bibliography file,
+  but you cannot cite all entries with @\\nocite*@.
+  If there are more than 26 uploads by the same author in a year,
+  the BibTeX style @alpha@ generates identifiers including curly braces
+  -- like @Thi2009\{@,
+  which interacts badly with LaTeX's handling of them.
+  If you reduce the Bibliography file to 5000 entries
+  and try to generate an overview of all entries with @\\nocite@,
+  -- @\\nocite{*}@,
+  then @pdflatex@ hits its limits:
+  .
+  > TeX capacity exceeded, sorry [save size=5000]
 Tested-With:      GHC==6.10.4
 Cabal-Version:    >=1.6
 Build-Type:       Simple
