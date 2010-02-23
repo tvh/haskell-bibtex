@@ -20,13 +20,14 @@ import System.Time (ClockTime(TOD), getClockTime,
 
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Archive.Tar.Entry as TarEnt
+import qualified Data.ByteString.Lazy.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as B
 import qualified System.IO as IO
 
 import Distribution.Text (display, )
 
 import Data.List.HT (dropWhileRev, )
-import Data.Char    (toLower, isSpace, isAlpha, chr, )
+import Data.Char    (toLower, isSpace, isAlpha, )
 import Data.Version (showVersion, )
 import qualified Data.List as List
 
@@ -76,28 +77,28 @@ example =
       putStrLn (Format.entry $ fromPackage now $ PkgD.packageDescription pkg)
 
 
-fromTarEntry :: Tar.Entry -> String
+fromTarEntry :: Tar.Entry -> B.ByteString
 fromTarEntry ent =
    if List.isSuffixOf ".cabal" (TarEnt.entryPath ent)
      then
        case TarEnt.entryContent ent of
           TarEnt.NormalFile txt _size ->
-             case parsePackageDescription
-                     (map (chr . fromIntegral) (B.unpack txt)) of
+             UTF8.fromString $
+             case parsePackageDescription (UTF8.toString txt) of
                 PkgP.ParseOk _ pkg ->
                    Format.entry $
                    fromPackage
                       (toUTCTime (TOD (fromIntegral $ TarEnt.entryTime ent) 0))
                       (PkgD.packageDescription pkg)
                 PkgP.ParseFailed msg -> show msg
-          _ -> ""
-     else ""
+          _ -> B.empty
+     else B.empty
 
 main :: IO ()
 main =
    Tar.foldEntries
       (\entry cont ->
-         putStrLn (fromTarEntry entry) >> cont)
+         B.putStrLn (fromTarEntry entry) >> cont)
       (return ()) (IO.hPutStr IO.stderr) .
    Tar.read =<<
    B.getContents
