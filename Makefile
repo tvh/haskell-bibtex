@@ -14,7 +14,8 @@ pubs:	tex/publications.pdf
 	(cd $(dir $<); pdflatex $(notdir $<); pdflatex $(notdir $<))
 
 %-cite.tex:	%.bib
-	ghc -e main src/Publications.hs < $< >$@
+	./dist/build/publication-overview/publication-overview < $< >$@
+#	ghc -e main src/Publications.hs < $< >$@
 
 %.bbl:	%.aux tex/publications.bib
 	(cd $(dir $<); bibtex $(notdir $*))
@@ -26,5 +27,5 @@ tex/%.aux: tex/publications.tex
 hackbib:	hackage.bib
 
 hackage.bib:	$(HOME)/.cabal/packages/hackage.haskell.org/00-index.tar.gz
-	gunzip --stdout $< | ghc -e main src/Hackage.hs >$@
-#	gunzip --stdout $< | hackage-bibtex >$@
+	gunzip --stdout $< | ./dist/build/hackage-bibtex/hackage-bibtex >$@
+#	gunzip --stdout $< | ghc -e main src/Hackage.hs >$@
