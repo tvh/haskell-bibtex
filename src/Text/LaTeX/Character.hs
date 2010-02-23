@@ -4,13 +4,69 @@ module Text.LaTeX.Character (
    table,
    ) where
 
-import Data.List.HT (multiReplace, )
-import Data.Char (chr, ord, )
+-- import Data.List.HT (multiReplace, )
+import Data.Tuple.HT (mapSnd, )
+import Data.Char (isLetter, chr, ord, )
 import qualified Data.Map as Map
 
 
+{- |
+Replace LaTeX macros for special characters
+by Unicode characters in a lazy way.
+-}
 toUnicodeString :: String -> String
-toUnicodeString = multiReplace table
+toUnicodeString =
+   filter (not . flip elem "{}") .
+   toUnicodeStringCore
+{-
+toUnicodeString =
+   multiReplace table
+-}
+
+toUnicodeStringCore :: String -> String
+toUnicodeStringCore "" = ""
+toUnicodeStringCore (c:cs) =
+   case c of
+     '\\' ->
+       let getArgument "" = ("", "")
+           getArgument (a:argsuffix) =
+              if a/='{'
+                then ([a], argsuffix)
+                else
+                  {-
+                  this does not support nested curly braces,
+                  however, I have no argument with braces in my dictionary
+                  -}
+                  let (argstr, suffix) = break ('}'==) argsuffix
+                  in  (argstr, drop 1 suffix)
+           translateInvocation = do
+              (macro,(arg,rest)) <-
+                 case cs of
+                    [] -> Nothing
+                    b:bs -> Just $
+                       if elem b "'`^\"~"
+                         then ([b], getArgument bs)
+                         else mapSnd getArgument $
+                              span isLetter cs
+              code <- Map.lookup (macro,arg) toMap
+              return (code, rest)
+       in  case translateInvocation of
+              Just (code,rest) -> code : toUnicodeStringCore rest
+              Nothing -> c : toUnicodeStringCore cs
+     '$' ->
+        let (math, rest) = break ('$'==) cs
+        in  parseMathString math ++ toUnicodeStringCore (drop 1 rest)
+     _ -> c : toUnicodeStringCore cs
+
+parseMathString :: String -> String
+parseMathString "" = ""
+parseMathString (c:cs) =
+   if c/='\\'
+     then c : parseMathString cs
+     else let (ident,rest) = span isLetter cs
+          in  maybe ('\\':ident) (:[])
+                 (Map.lookup ident mathMap) ++
+              parseMathString rest
 
 fromUnicodeString :: String -> String
 fromUnicodeString =
@@ -68,6 +124,20 @@ fromMap =
       (map (\c -> (c, '\\':c:[])) escapedChars)
 
 
+toMap :: Map.Map (String, String) Char
+toMap =
+   Map.fromList
+      (do (base, variants) <- accents
+          (accent, code) <- variants
+          return (([accent], [base]), chr code))
+   `Map.union`
+   Map.fromList
+      (map (\(ident, code) -> ((ident, ""), chr code)) specialChars)
+   `Map.union`
+   Map.fromList
+      (map (\c -> (('\\':c:[], ""), c)) escapedChars)
+
+
 accents :: [(Char, [(Char, Int)])]
 accents =
    ('A', ('`', 192) : ('\'', 193) : ('^', 194) : ('~', 195) : ('"', 196) : []) :
@@ -120,6 +190,10 @@ specialChars =
    ("textquestiondown", 191) :
    ("textquotedblleft", ord '"') :
    []
+
+mathMap :: Map.Map String Char
+mathMap =
+   Map.fromList (map (\(name,code) -> (name, chr code)) mathChars)
 
 mathChars :: [(String, Int)]
 mathChars =
