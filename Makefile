@@ -1,4 +1,4 @@
-.PHONY:	ghci pubs hackbib
+.PHONY:	ghci pubs hackbib remotehackbib
 
 # problem: bibtex refuses to generate empty bbl files
 # thus you must have at least one entry per publication type
@@ -29,3 +29,10 @@ hackbib:	hackage.bib
 hackage.bib:	$(HOME)/.cabal/packages/hackage.haskell.org/00-index.tar.gz
 	gunzip --stdout $< | ./dist/build/hackage-bibtex/hackage-bibtex >$@
 #	gunzip --stdout $< | ghc -e main src/Hackage.hs >$@
+
+remotehackbib:
+	wget -O - http://hackage.haskell.org/packages/archive/00-index.tar.gz \
+	   | gunzip \
+	   | ./dist/build/hackage-bibtex/hackage-bibtex \
+	   | ssh code.haskell.org tee /home/thielema/public_html/bibtex/hackage.bib \
+	   > /dev/null
