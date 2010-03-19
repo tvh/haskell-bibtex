@@ -13,6 +13,17 @@ import Data.List.HT (chop, )
 import Data.String.HT (trim, )
 
 
+{- |
+Beware that this and all other parsers do not accept leading spaces,
+cf. 'skippingSpace'.
+That is when encountering leading white spaces
+the parser will just return an empty list.
+If you want to parse a file that contains entirely of BibTeX data
+you better call @skippingLeadingSpace file@ instead.
+However, the @file@ parser is more combinable
+and can be used for files that contain both BibTeX and other data
+or it can be used for automated filetype checking.
+-}
 file :: Parser [Entry.T]
 file =
    fmap catMaybes $
@@ -88,6 +99,10 @@ skippingSpace p =
    do x <- p
       Parsec.skipMany Parsec.space
       return x
+
+skippingLeadingSpace :: Parser a -> Parser a
+skippingLeadingSpace p =
+   Parsec.skipMany Parsec.space >> p
 
 
 
