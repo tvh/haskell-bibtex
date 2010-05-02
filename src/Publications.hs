@@ -19,6 +19,7 @@ typeTable =
    (("techreport", Nothing), "techreport") :
    (("inbook", Just "program"), "program") :
    (("misc", Just "program"), "program") :
+   (("misc", Just "talk"), "talk") :
    (("mastersthesis", Nothing), "thesis") :
    (("phdthesis", Nothing), "thesis") :
    []
