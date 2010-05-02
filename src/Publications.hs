@@ -27,8 +27,9 @@ typeTable =
 
 cite :: Entry.T -> String
 cite entry =
-   "\\nocite" ++
-   fromMaybe ""
+   maybe
+      "% \\nocite"
+      ("\\nocite" ++ )
       (lookup
           (map Char.toLower (Entry.entryType entry),
            lookup "subtype" (Entry.fields (Entry.lowerCaseFieldNames entry)))
