@@ -124,7 +124,7 @@ texBlock closeChar =
       (Parsec.char '{') (texSequence '}') (Parsec.char '}') <|>
    sequence
       [Parsec.char '\\',
-       Parsec.oneOf "{}'`^&%\".,~# " <|> Parsec.letter] <|>
+       Parsec.oneOf "_{}'`^&%\".,~# " <|> Parsec.letter] <|>
    fmap (:[]) (Parsec.noneOf [closeChar])
 
 {- |
@@ -142,8 +142,8 @@ Parse a name of a BibTeX entry like @author2010title@.
 bibIdentifier :: Parser String
 bibIdentifier =
    liftM2 (:)
-      Parsec.letter
-      (Parsec.many (Parsec.alphaNum <|> Parsec.oneOf ":-_."))
+      (Parsec.letter <|> Parsec.char '_')
+      (Parsec.many (Parsec.alphaNum <|> Parsec.oneOf "&;:-_.?+/"))
 
 {- |
 Extends a parser, such that all trailing spaces are skipped.
