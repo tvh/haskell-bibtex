@@ -48,7 +48,8 @@ Parse a BibTeX entry like
 > @article{author2010title,
 >   author = {Firstname Surname},
 >   title = {Title},
->   year = {2010},
+>   year = 2010,
+>   month = jul,
 > }
 
 .
@@ -79,7 +80,11 @@ assignment =
       return (field, trim val)
 
 {- |
-Parse an assignment like
+Parse a value like
+
+> jul
+
+or
 
 > 2010
 
@@ -95,7 +100,8 @@ or
 -}
 value :: Parser String
 value =
-   Parsec.many1 Parsec.digit <|>
+   Parsec.many1 Parsec.letter <|> -- for fields like: month = jul
+   Parsec.many1 Parsec.digit <|>  -- for fields like: year = 2010
    Parsec.between (Parsec.char '{') (Parsec.char '}') (texSequence '}') <|>
    Parsec.between (Parsec.char '"') (Parsec.char '"') (texSequence '"')
 
