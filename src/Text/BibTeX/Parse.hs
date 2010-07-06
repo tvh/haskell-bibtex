@@ -7,6 +7,7 @@ import qualified Text.ParserCombinators.Parsec as Parsec
 import qualified Data.Char as Char
 
 import Control.Monad (liftM, liftM2, liftM3, )
+-- import Control.Applicative ((<*), )
 
 import Data.Maybe (catMaybes, )
 import Data.List.HT (chop, )
@@ -28,7 +29,11 @@ file :: Parser [Entry.T]
 file =
    fmap catMaybes $
    Parsec.many
-      (skippingSpace (fmap Just entry <|> fmap (const Nothing) comment))
+      (skippingSpace
+--         ((fmap Just entry <* Parsec.optional (Parsec.char ',')))
+         ((do e <- entry; Parsec.optional (Parsec.char ','); return (Just e))
+          <|>
+          fmap (const Nothing) comment))
 
 {- |
 Parse a line that starts with a hash like
