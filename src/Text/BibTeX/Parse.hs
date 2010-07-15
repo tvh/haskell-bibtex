@@ -146,9 +146,7 @@ Parse a name of a BibTeX entry like @author2010title@.
 -}
 bibIdentifier :: Parser String
 bibIdentifier =
-   liftM2 (:)
-      (Parsec.letter <|> Parsec.char '_')
-      (Parsec.many (Parsec.alphaNum <|> Parsec.oneOf "&;:-_.?+/"))
+   Parsec.many1 (Parsec.alphaNum <|> Parsec.oneOf "&;:-_.?+/")
 
 {- |
 Extends a parser, such that all trailing spaces are skipped.
