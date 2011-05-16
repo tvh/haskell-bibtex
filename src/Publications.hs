@@ -5,7 +5,6 @@ import qualified Text.BibTeX.Entry as Entry
 import qualified Text.ParserCombinators.Parsec as Parsec
 
 import qualified Data.Char as Char
-import Data.Maybe (fromMaybe, )
 import System.IO (hPutStrLn, stderr, )
 
 

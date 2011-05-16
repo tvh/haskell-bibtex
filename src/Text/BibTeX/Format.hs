@@ -5,8 +5,6 @@ import qualified Text.BibTeX.Entry as Entry
 import Data.List (intersperse, )
 import Data.List.HT (switchR, )
 
-import qualified Data.Char as Char
-
 
 entry :: Entry.T -> String
 entry (Entry.Cons entryType bibId items) =

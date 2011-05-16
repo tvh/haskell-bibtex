@@ -4,7 +4,6 @@ import qualified Text.BibTeX.Entry as Entry
 
 import Text.ParserCombinators.Parsec (Parser, (<|>), )
 import qualified Text.ParserCombinators.Parsec as Parsec
-import qualified Data.Char as Char
 
 import Control.Monad (liftM, liftM2, liftM3, )
 -- import Control.Applicative ((<*), )
