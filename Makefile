@@ -8,19 +8,19 @@ TYPES := conference journal popular program \
 ghci:
 	ghci -Wall -i:src src/Publications.hs
 
-pubs:	tex/publications.pdf
+pubs:	publications/publications.pdf
 
-%.pdf:	%.tex %-cite.tex $(patsubst %, tex/%.bbl, $(TYPES))
+%.pdf:	%.tex %-cite.tex $(patsubst %, publications/%.bbl, $(TYPES))
 	(cd $(dir $<); pdflatex $(notdir $<); pdflatex $(notdir $<))
 
 %-cite.tex:	%.bib
 	./dist/build/publication-overview/publication-overview < $< >$@
 #	ghc -e main src/Publications.hs < $< >$@
 
-%.bbl:	%.aux tex/publications.bib
+%.bbl:	%.aux publications/publications.bib
 	(cd $(dir $<); bibtex $(notdir $*))
 
-tex/%.aux: tex/publications.tex
+publications/%.aux: publications/publications.tex
 	(cd $(dir $<); pdflatex $(notdir $<))
 
 

@@ -26,7 +26,7 @@ Description:
   .
   > cabal install -fbuildExamples bibtex
   .
-  For the first example see the "tex" directory of this package.
+  For the first example see the @publications@ directory of this package.
   You can start the program and build an example document by running
   .
   > make pubs
@@ -35,7 +35,7 @@ Description:
   for the LaTeX package @multibib@.
   You can add the custom bibtex field @subtype@ to BibTeX entries
   for more detailed categorization of an entry.
-  See "tex/publications.bib" for examples.
+  See "publications/publications.bib" for examples.
   .
   The second example can be executed using
   .
@@ -66,8 +66,8 @@ Cabal-Version:    >=1.6
 Build-Type:       Simple
 Extra-Source-Files:
   Makefile
-  tex/publications.tex
-  tex/publications.bib
+  publications/publications.tex
+  publications/publications.bib
   hackage/hackage.tex
   hackage/thielemann.tex
 Source-Repository head
