@@ -1,17 +1,58 @@
-module Text.BibTeX.Parse where
+{- |
+The parsers in this module also skip trailing spaces.
+-}
+module Text.BibTeX.Parse (
+   file,
+   comment,
+   entry,
+   assignment,
+   value,
+   texSequence,
+   texBlock,
+   identifier,
+   bibIdentifier,
+
+   -- utility functions
+   skippingSpace,
+   skippingLeadingSpace,
+
+   splitCommaSepList,
+   splitAuthorList,
+   splitSepList,
+   ) where
 
 import qualified Text.BibTeX.Entry as Entry
 
-import Text.ParserCombinators.Parsec (Parser, (<|>), )
+import qualified Text.ParserCombinators.Parsec.Token as T
+import qualified Text.ParserCombinators.Parsec.Language as L
 import qualified Text.ParserCombinators.Parsec as Parsec
+import Text.ParserCombinators.Parsec
+   (CharParser, Parser,
+    (<|>), alphaNum, digit, letter, char, noneOf, oneOf,
+    between, many, many1, sepEndBy, )
 
 import Control.Monad (liftM, liftM2, liftM3, )
--- import Control.Applicative ((<*), )
 
-import Data.Maybe (catMaybes, )
 import Data.List.HT (chop, )
-import Data.String.HT (trim, )
 
+
+lexer :: T.TokenParser st
+lexer =
+   T.makeTokenParser $ L.emptyDef {
+      L.commentLine = "%",
+      L.identStart = alphaNum,
+      L.identLetter = alphaNum
+   }
+
+
+identifier, comma, equals :: CharParser st String
+identifier = T.identifier lexer
+comma = T.comma lexer
+equals = T.symbol lexer "="
+
+braces, lexeme :: CharParser st a -> CharParser st a
+braces = T.braces lexer
+lexeme = T.lexeme lexer
 
 {- |
 Beware that this and all other parsers do not accept leading spaces,
@@ -25,26 +66,12 @@ and can be used for files that contain both BibTeX and other data
 or it can be used for automated filetype checking.
 -}
 file :: Parser [Entry.T]
-file =
-   fmap catMaybes $
-   Parsec.many
-      (skippingSpace
---         ((fmap Just entry <* Parsec.optional (Parsec.char ',')))
-         ((do e <- entry; Parsec.optional (Parsec.char ','); return (Just e))
-          <|>
-          fmap (const Nothing) comment))
+file = comment >> sepEndBy entry comment
 
-{- |
-Parse a line that starts with a hash like
 
-> # this is a comment
-
-.
--}
 comment :: Parser String
-comment =
-   do Parsec.char '#'
-      fmap trim $ Parsec.manyTill Parsec.anyChar Parsec.newline
+comment = many $ noneOf "@"
+
 
 {- |
 Parse a BibTeX entry like
@@ -60,14 +87,11 @@ Parse a BibTeX entry like
 -}
 entry :: Parser Entry.T
 entry =
-   do Parsec.char '@'
-      entryType <- skippingSpace identifier
-      skippingSpace (Parsec.char '{')
-      bibId <- skippingSpace (bibIdentifier <|> return "")
-      skippingSpace (Parsec.char ',')
-      assigns <- assignment `Parsec.sepEndBy` skippingSpace (Parsec.char ',')
-      skippingSpace (Parsec.char '}')
-      return (Entry.Cons entryType bibId assigns)
+   do entryType <- char '@' >> identifier
+      braces $
+         liftM2 (Entry.Cons entryType)
+            (Parsec.try bibIdentifier)
+            (comma >> sepEndBy assignment comma)
 
 {- |
 Parse an assignment like
@@ -78,10 +102,9 @@ Parse an assignment like
 -}
 assignment :: Parser (String, String)
 assignment =
-   do field <- skippingSpace bibIdentifier
-      skippingSpace (Parsec.char '=')
-      val <- skippingSpace value
-      return (field, trim val)
+   liftM2 (,)
+      bibIdentifier
+      (equals >> value)
 
 {- |
 Parse a value like
@@ -104,10 +127,10 @@ or
 -}
 value :: Parser String
 value =
-   Parsec.many1 Parsec.letter <|> -- for fields like: month = jul
-   Parsec.many1 Parsec.digit <|>  -- for fields like: year = 2010
-   Parsec.between (Parsec.char '{') (Parsec.char '}') (texSequence '}') <|>
-   Parsec.between (Parsec.char '"') (Parsec.char '"') (texSequence '"')
+   lexeme (many1 letter) <|> -- for fields like: month = jul
+   lexeme (many1 digit)  <|> -- for fields like: year = 2010
+   braces (texSequence '}') <|>
+   lexeme (between (char '"') (char '"') (texSequence '"'))
 
 {- |
 Parse a sequence of 'texBlock's until the occurrence of a closing character.
@@ -115,7 +138,7 @@ The closing character is not part of the result.
 -}
 texSequence :: Char -> Parser String
 texSequence closeChar =
-   liftM concat (Parsec.many (texBlock closeChar))
+   liftM concat (many (texBlock closeChar))
 
 {- |
 Parse a single character like @a@,
@@ -125,36 +148,32 @@ or a block enclosed in curly braces like @{\\\"{a}bc}@.
 texBlock :: Char -> Parser String
 texBlock closeChar =
    liftM3 (\open body close -> open : body ++ close : [])
-      (Parsec.char '{') (texSequence '}') (Parsec.char '}') <|>
+      (char '{') (texSequence '}') (char '}') <|>
    sequence
-      [Parsec.char '\\',
-       Parsec.oneOf "_{}'`^&%\".,~# " <|> Parsec.letter] <|>
-   fmap (:[]) (Parsec.noneOf [closeChar])
+      [char '\\',
+       oneOf "_{}'`^&%\".,~# " <|> letter] <|>
+   fmap (:[]) (noneOf [closeChar])
 
-{- |
-Parse a type of a BibTeX entry like @article@.
--}
-identifier :: Parser String
-identifier =
-   liftM2 (:)
-      Parsec.letter
-      (Parsec.many Parsec.alphaNum)
 
 {- |
 Parse a name of a BibTeX entry like @author2010title@.
 -}
 bibIdentifier :: Parser String
 bibIdentifier =
-   Parsec.many1 (Parsec.alphaNum <|> Parsec.oneOf "&;:-_.?+/")
+   lexeme $
+   liftM2 (:) (letter <|> char '_') (many (alphaNum <|> oneOf "&;:-_.?+/"))
+
 
 {- |
 Extends a parser, such that all trailing spaces are skipped.
-It might be more comfortable to skip all leading zeros,
+It might be more comfortable to skip all leading spaces,
 but parser written that way are hard to combine.
 This is so, since if you run two parsers in parallel
 and both of them expect leading spaces,
 then the parser combinator does not know
 which one of the parallel parsers to choose.
+
+See also: 'lexeme'.
 -}
 skippingSpace :: Parser a -> Parser a
 skippingSpace p =
@@ -165,7 +184,6 @@ skippingSpace p =
 skippingLeadingSpace :: Parser a -> Parser a
 skippingLeadingSpace p =
    Parsec.skipMany Parsec.space >> p
-
 
 
 -- * Convert contents of BibTeX fields into lists
