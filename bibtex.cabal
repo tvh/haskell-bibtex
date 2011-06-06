@@ -61,7 +61,7 @@ Description:
   then @pdflatex@ hits its limits:
   .
   > TeX capacity exceeded, sorry [save size=5000]
-Tested-With:      GHC==6.10.4
+Tested-With:      GHC==6.12.3
 Cabal-Version:    >=1.6
 Build-Type:       Simple
 Extra-Source-Files:
