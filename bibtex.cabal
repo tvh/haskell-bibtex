@@ -41,8 +41,9 @@ Description:
   .
   > make hackbib
   .
-  The file @hackage.bib@ is written to the current directory.
-  The program reads an uncompressed tar archive from standard input
+  The file @hackage.bib@ is written to the @hackage@ subdirectory.
+  The @hackage-bibtex@ program
+  reads an uncompressed tar archive from standard input
   and writes the result bibliography file to standard output.
   .
   Note that @hackage.bib@ exceeds some limits of standard BibTeX and LaTeX:
@@ -67,6 +68,8 @@ Extra-Source-Files:
   Makefile
   tex/publications.tex
   tex/publications.bib
+  hackage/hackage.tex
+  hackage/thielemann.tex
 Source-Repository head
   type:     darcs
   location: http://code.haskell.org/~thielema/bibtex/

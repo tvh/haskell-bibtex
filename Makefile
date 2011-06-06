@@ -24,9 +24,9 @@ tex/%.aux: tex/publications.tex
 	(cd $(dir $<); pdflatex $(notdir $<))
 
 
-hackbib:	hackage.bib
+hackbib:	hackage/hackage.bib
 
-hackage.bib:	$(HOME)/.cabal/packages/hackage.haskell.org/00-index.tar.gz src/Hackage.hs
+hackage/hackage.bib:	$(HOME)/.cabal/packages/hackage.haskell.org/00-index.tar.gz src/Hackage.hs
 	gunzip --stdout $< | ./dist/build/hackage-bibtex/hackage-bibtex >$@
 #	gunzip --stdout $< | ghc -e main src/Hackage.hs >$@
 
