@@ -1,4 +1,4 @@
-.PHONY:	ghci pubs hackbib remotehackbib
+.PHONY:	ghci test testbuild pubs hackbib remotehackbib
 
 # problem: bibtex refuses to generate empty bbl files
 # thus you must have at least one entry per publication type
@@ -7,6 +7,13 @@ TYPES := conference journal popular program \
 
 ghci:
 	ghci -Wall -i:src src/Publications.hs
+
+test:	testbuild pubs
+
+testbuild:
+	runhaskell Setup configure --user -fbuildExamples
+	runhaskell Setup build
+	runhaskell Setup haddock
 
 pubs:	publications/publications.pdf
 
