@@ -163,6 +163,6 @@ main =
    Tar.foldEntries
       (\entry cont ->
          B.putStrLn (fromTarEntry entry) >> cont)
-      (return ()) (IO.hPutStr IO.stderr) .
+      (return ()) (IO.hPutStr IO.stderr . show) .
    Tar.read =<<
    B.getContents
