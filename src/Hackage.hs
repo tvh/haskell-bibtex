@@ -141,28 +141,24 @@ decodeUTF8orLatin =
            else (c,rest))
 
 
-fromTarEntry :: Tar.Entry -> B.ByteString
+fromTarEntry :: Tar.Entry -> String
 fromTarEntry ent =
-   if List.isSuffixOf ".cabal" (TarEnt.entryPath ent)
-     then
-       case TarEnt.entryContent ent of
-          TarEnt.NormalFile txt _size ->
-             UTF8.fromString $
-             case parsePackageDescription (decodeUTF8orLatin txt) of
-                PkgP.ParseOk _ pkg ->
-                   Format.entry $
-                   fromPackage
-                      (toUTCTime (TOD (fromIntegral $ TarEnt.entryTime ent) 0))
-                      (PkgD.packageDescription pkg)
-                PkgP.ParseFailed msg -> show msg
-          _ -> B.empty
-     else B.empty
+   case (List.isSuffixOf ".cabal" $ TarEnt.entryPath ent,
+         TarEnt.entryContent ent) of
+      (True, TarEnt.NormalFile txt _size) ->
+         case parsePackageDescription (decodeUTF8orLatin txt) of
+            PkgP.ParseOk _ pkg ->
+               Format.entry $
+               fromPackage
+                  (toUTCTime (TOD (fromIntegral $ TarEnt.entryTime ent) 0))
+                  (PkgD.packageDescription pkg)
+            PkgP.ParseFailed msg -> show msg
+      _ -> ""
 
 main :: IO ()
 main =
    Tar.foldEntries
-      (\entry cont ->
-         B.putStrLn (fromTarEntry entry) >> cont)
+      (\entry cont -> putStrLn (fromTarEntry entry) >> cont)
       (return ()) (IO.hPutStr IO.stderr . show) .
    Tar.read =<<
    B.getContents
