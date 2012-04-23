@@ -70,7 +70,13 @@ Extra-Source-Files:
   publications/publications.bib
   hackage/hackage.tex
   hackage/thielemann.tex
+
 Source-Repository head
+  type:     darcs
+  location: http://code.haskell.org/~thielema/bibtex/
+
+Source-Repository this
+  tag:      0.1
   type:     darcs
   location: http://code.haskell.org/~thielema/bibtex/
 
