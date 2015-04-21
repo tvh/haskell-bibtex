@@ -41,5 +41,6 @@ remotehackbib:
 	wget -O - http://hackage.haskell.org/packages/archive/00-index.tar.gz \
 	   | gunzip \
 	   | ./dist/build/hackage-bibtex/hackage-bibtex \
-	   | ssh code.haskell.org tee /home/thielema/public_html/bibtex/hackage.bib \
+	   | xz \
+	   | ssh code.haskell.org tee /home/thielema/public_html/bibtex/hackage.bib.xz \
 	   > /dev/null
