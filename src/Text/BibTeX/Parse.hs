@@ -151,7 +151,7 @@ texBlock closeChar =
       (char '{') (texSequence '}') (char '}') <|>
    sequence
       [char '\\',
-       oneOf "_{}$|'`^&%\".,~# " <|> letter] <|>
+       oneOf "_{}[]$|'`^&%\".,~# " <|> letter] <|>
    fmap (:[]) (noneOf [closeChar])
 
 
