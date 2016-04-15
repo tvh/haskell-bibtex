@@ -161,7 +161,7 @@ Parse a name of a BibTeX entry like @author2010title@.
 bibIdentifier :: Parser String
 bibIdentifier =
    lexeme $
-   liftM2 (:) (letter <|> char '_') (many (alphaNum <|> oneOf "&;:-_.?+/"))
+   liftM2 (:) (alphaNum <|> char '_') (many (alphaNum <|> oneOf "&;:-_.?+/"))
 
 
 {- |
