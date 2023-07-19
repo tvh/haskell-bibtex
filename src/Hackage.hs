@@ -4,17 +4,18 @@ import qualified Text.BibTeX.Format as Format
 import qualified Text.BibTeX.Entry as Entry
 import qualified Text.LaTeX.Character as LaTeX
 
-import qualified Distribution.PackageDescription.Parse as PkgP
+import qualified Distribution.PackageDescription.Parsec as PkgP
 import qualified Distribution.PackageDescription as PkgD
+import qualified Distribution.Simple.PackageDescription as PkgD
 import qualified Distribution.Package as Pkg
+import qualified Distribution.Types.PackageName as PkgN
 import qualified Distribution.Verbosity as Verbosity
 import Distribution.PackageDescription
                    (PackageDescription, )
 import Distribution.Package
                    (PackageIdentifier(..), )
-import Distribution.PackageDescription.Parse
-                   (parsePackageDescription,
-                    readPackageDescription, )
+import Distribution.PackageDescription.Parsec
+                   (parseGenericPackageDescription, )
 import System.Time (ClockTime(TOD), getClockTime,
                     toCalendarTime, toUTCTime,
                     CalendarTime, ctYear, ctMonth, )
@@ -26,12 +27,13 @@ import qualified Data.ByteString.Lazy as B
 import qualified System.IO as IO
 
 import Distribution.Text (display, )
+import Distribution.Pretty (prettyShow, )
+import Distribution.Utils.ShortText (fromShortText, )
 
 import Data.String.HT (trim, )
 import Data.Tuple.HT  (mapFst, )
 import Data.List.HT   (switchL, switchR, )
 import Data.Char      (toLower, isSpace, isAlpha, chr, )
-import Data.Version   (showVersion, )
 import qualified Data.List as List
 
 
@@ -88,16 +90,16 @@ splitAuthorList =
 fromPackage :: CalendarTime -> PackageDescription -> Entry.T
 fromPackage time pkg =
    let authors =
-          splitAuthorList $ PkgD.author pkg
+          splitAuthorList $ fromShortText $ PkgD.author pkg
        surname =
           switchL "unknown" (\firstAuthor _ ->
              switchR "" (\_ -> filter isAlpha) $
              words firstAuthor) $
           authors
        pkgId = PkgD.package pkg
-       Pkg.PackageName name = Pkg.pkgName pkgId
+       name = PkgN.unPackageName (Pkg.pkgName pkgId)
        year = ctYear time
-       versionStr = showVersion (Pkg.pkgVersion pkgId)
+       versionStr = prettyShow (Pkg.pkgVersion pkgId)
        bibId =
           map toLower surname ++ show year ++
           name ++ "-" ++ versionStr
@@ -109,21 +111,21 @@ fromPackage time pkg =
                   map LaTeX.fromUnicodeString authors) :
        ("title",
            "{" ++ name ++ ": " ++
-           LaTeX.fromUnicodeString (PkgD.synopsis pkg) ++ "}") :
+           LaTeX.fromUnicodeString (fromShortText (PkgD.synopsis pkg)) ++ "}") :
        ("howpublished",
            "\\url{http://hackage.haskell.org" ++
            packageURL (PkgD.package pkg) ++ "}") :
        ("year", show year) :
        ("month", show (ctMonth time)) :
        ("version", versionStr) :
-       ("keywords", "Haskell, " ++ PkgD.category pkg ) :
+       ("keywords", "Haskell, " ++ fromShortText (PkgD.category pkg)) :
        ("subtype", "program") :
        []
 
 example :: IO ()
 example =
    do now <- toCalendarTime =<< getClockTime
-      pkg <- readPackageDescription Verbosity.silent "example.cabal"
+      pkg <- PkgD.readGenericPackageDescription Verbosity.silent "example.cabal"
       putStrLn (Format.entry $ fromPackage now $ PkgD.packageDescription pkg)
 
 
@@ -146,13 +148,13 @@ fromTarEntry ent =
    case (List.isSuffixOf ".cabal" $ TarEnt.entryPath ent,
          TarEnt.entryContent ent) of
       (True, TarEnt.NormalFile txt _size) ->
-         case parsePackageDescription (decodeUTF8orLatin txt) of
-            PkgP.ParseOk _ pkg ->
+         case PkgP.runParseResult (parseGenericPackageDescription (B.toStrict txt)) of
+            (_, Right pkg) ->
                Format.entry $
                fromPackage
                   (toUTCTime (TOD (fromIntegral $ TarEnt.entryTime ent) 0))
                   (PkgD.packageDescription pkg)
-            PkgP.ParseFailed msg -> show msg
+            (_, Left err) -> show err
       _ -> ""
 
 main :: IO ()
